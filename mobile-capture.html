@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#267254">
+<title>Kharcha Mobile Capture</title>
+<link rel="manifest" href="data:application/json,{%22name%22:%22Kharcha%20Mobile%22,%22short_name%22:%22Kharcha%22,%22display%22:%22standalone%22,%22background_color%22:%22%23f4f1e9%22,%22theme_color%22:%22%23267254%22,%22icons%22:[{%22src%22:%22/favicon.svg%22,%22sizes%22:%22any%22,%22type%22:%22image/svg%2Bxml%22}]">
+<style>
+  *{box-sizing:border-box}body{margin:0;font:16px/1.5 system-ui,-apple-system,sans-serif;background:#f4f1e9;color:#18231c;min-height:100vh;padding:16px}
+  .card{background:#fffdf8;border:1px solid #e6dfd2;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(36,45,38,.05)}
+  h1{font-size:1.25rem;margin:0 0 16px;color:#18231c}
+  .row{display:flex;gap:12px;margin-bottom:12px}
+  .row>*{flex:1}
+  label{display:block;font-size:.75rem;color:#85877b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;font-weight:600}
+  input,select{width:100%;padding:12px;border:1px solid #d7cfc0;border-radius:10px;background:#fff;font:inherit;font-size:1rem;color:#18231c}
+  input:focus,select:focus{outline:0;border-color:#267254;box-shadow:0 0 0 3px #e8f1eb}
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border-radius:12px;font:inherit;font-size:1rem;font-weight:600;border:none;cursor:pointer}
+  .btn-primary{background:#267254;color:#fff}
+  .btn-primary:active{background:#12382a}
+  .btn-secondary{background:#fffdf8;border:1px solid #e6dfd2;color:#18231c}
+  .btn-secondary:active{background:#f8f4eb}
+  .btn-danger{background:#fffdf8;border:1px solid #e87351;color:#e87351}
+  .btn-danger:active{background:#fbe9e2}
+  .list{list-style:none;padding:0;margin:0;max-height:300px;overflow:auto}
+  .item{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:10px;border-bottom:1px solid #f0ebdf;font-size:.9rem}
+  .item:last-child{border-bottom:none}
+  .item-info{display:flex;flex-direction:column;gap:2px}
+  .item-cat{font-weight:600;color:#18231c}
+  .item-meta{font-size:.75rem;color:#85877b}
+  .item-amt{font-variant-numeric:tabular-nums;font-weight:700;color:#267254}
+  .item-amt.expense{color:#e87351}
+  .empty{text-align:center;padding:24px;color:#85877b;font-size:.9rem}
+  .totals{display:flex;justify-content:space-between;padding-top:12px;border-top:1px solid #e6dfd2;font-weight:700;font-size:.9rem}
+  .totals .expense{color:#e87351}
+  .tabs{display:flex;gap:4px;background:#f8f4eb;border:1px solid #e6dfd2;border-radius:999px;padding:4px;margin-bottom:16px}
+  .tab{flex:1;padding:10px;border:none;background:transparent;font:inherit;font-weight:600;color:#6e746a;border-radius:999px}
+  .tab.active{background:#fff;color:#18231c;box-shadow:0 2px 6px rgba(36,45,38,.1)}
+  .cat-input-row{display:flex;gap:8px;margin-bottom:12px}
+  .cat-input-row input{flex:1}
+  .cat-input-row button{width:auto;padding:0 16px}
+  .chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#f8f4eb;border:1px solid #e6dfd2;border-radius:999px;font-size:.8rem;color:#445047}
+  .chip button{background:none;border:none;padding:0;font:inherit;color:#85877b;line-height:1}
+  .pay-input-row{display:flex;gap:8px;margin-bottom:12px}
+  .pay-input-row input{flex:1}
+  .pay-input-row button{width:auto;padding:0 16px}
+  .pay-chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  @media (max-width:400px){.row{flex-direction:column;gap:8px}}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>💸 Kharcha Mobile Capture</h1>
+  <div class="tabs">
+    <button class="tab active" data-tab="expense">Expense</button>
+    <button class="tab" data-tab="earning">Earning</button>
+  </div>
+</div>
+
+<div class="card" id="form-card">
+  <form id="entry-form">
+    <div class="row">
+      <div>
+        <label>Amount (₹)</label>
+        <input type="number" id="amount" inputmode="decimal" step="0.01" min="0.01" required>
+      </div>
+      <div>
+        <label>Date</label>
+        <input type="date" id="date" required>
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Category</label>
+        <select id="category" required></select>
+      </div>
+      <div>
+        <label>Payment</label>
+        <select id="payment" required></select>
+      </div>
+    </div>
+    <div>
+      <label>Remark (optional)</label>
+      <input type="text" id="remark" maxlength="500" placeholder="e.g. lunch, fuel, salary">
+    </div>
+    <button class="btn btn-primary" type="submit" style="margin-top:12px">Add Entry</button>
+  </form>
+
+  <div class="cat-input-row" style="margin-top:16px;padding-top:16px;border-top:1px solid #e6dfd2">
+    <input type="text" id="new-category" placeholder="Add custom category" maxlength="40">
+    <button class="btn btn-secondary" type="button" id="add-cat-btn">Add</button>
+  </div>
+  <div class="chip-row" id="cat-chips"></div>
+
+  <div class="pay-input-row" style="margin-top:16px;padding-top:16px;border-top:1px solid #e6dfd2">
+    <input type="text" id="new-payment" placeholder="Add custom payment method" maxlength="30">
+    <button class="btn btn-secondary" type="button" id="add-pay-btn">Add</button>
+  </div>
+  <div class="chip-row" id="pay-chips"></div>
+</div>
+
+<div class="card">
+  <h1 style="margin-bottom:12px">Entries</h1>
+  <ul class="list" id="entry-list"></ul>
+  <div class="empty" id="empty-msg" hidden>No entries yet. Add your first expense or earning.</div>
+  <div class="totals">
+    <span>Expenses: <span id="tot-expense" class="expense">₹0</span></span>
+    <span>Earnings: <span id="tot-earning">₹0</span></span>
+    <span>Net: <span id="tot-net">₹0</span></span>
+  </div>
+</div>
+
+<div class="card">
+  <button class="btn btn-primary" id="export-all-btn" style="margin-bottom:8px">📤 Export All (Mixed)</button>
+  <button class="btn btn-secondary" id="export-expense-btn">📤 Export Expenses CSV</button>
+  <button class="btn btn-secondary" id="export-earning-btn" style="margin-top:8px">📤 Export Earnings CSV</button>
+  <button class="btn btn-danger" id="clear-btn" style="margin-top:8px">🗑️ Clear All Data (This Type)</button>
+</div>
+
+<script>
+const STORAGE_KEYS = {
+  expense: 'kharcha_mobile_expenses',
+  earning: 'kharcha_mobile_earnings',
+  cats: {
+    expense: 'kharcha_mobile_cats_expense',
+    earning: 'kharcha_mobile_cats_earning'
+  },
+  pays: {
+    expense: 'kharcha_mobile_pays_expense',
+    earning: 'kharcha_mobile_pays_earning'
+  }
+};
+
+const DEFAULT_CATS = {
+  expense: ['Food','Transport','Shopping','Bills','Health','Entertainment','Other','Myself','Home','Dad','Zu','Petrol-Diesel','Me-and-others'],
+  earning: ['Salary','Freelance','Business','Investments','Gifts','Refunds','Other Income']
+};
+const DEFAULT_PAYS = {
+  expense: ['Cash','UPI','Card','Bank Transfer','Cheque'],
+  earning: ['Cash','UPI','Card','Bank Transfer','Cheque']
+};
+
+function $(sel){return document.querySelector(sel)}
+function $$(sel){return [...document.querySelectorAll(sel)]}
+function fmt(n){return '₹'+Number(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function today(){return new Date().toISOString().slice(0,10)}
+function nowTime(){const d=new Date();let h=d.getHours();const m=String(d.getMinutes()).padStart(2,'0');const s=String(d.getSeconds()).padStart(2,'0');const ap=h>=12?'PM':'AM';h=h%12||12;return `${h}:${m}:${s} ${ap}`}
+function load(key, fallback){
+  try{const v=localStorage.getItem(key);return v?JSON.parse(v):fallback}catch{return fallback}
+}
+function save(key, val){localStorage.setItem(key, JSON.stringify(val))}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+
+let mode = 'expense';
+let entries = [];
+let categories = { expense: [], earning: [] };
+let payments = { expense: [], earning: [] };
+
+function initData(){
+  categories.expense = load(STORAGE_KEYS.cats.expense, DEFAULT_CATS.expense);
+  categories.earning = load(STORAGE_KEYS.cats.earning, DEFAULT_CATS.earning);
+  payments.expense = load(STORAGE_KEYS.pays.expense, DEFAULT_PAYS.expense);
+  payments.earning = load(STORAGE_KEYS.pays.earning, DEFAULT_PAYS.earning);
+  entries = load(STORAGE_KEYS[mode], []);
+}
+
+function renderCats(){
+  const cats = categories[mode] || [];
+  const pays = payments[mode] || [];
+  const catSel = $('#category');
+  const paySel = $('#payment');
+  if(catSel) catSel.innerHTML = cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+  if(paySel) paySel.innerHTML = pays.map(p=>`<option value="${p}">${p}</option>`).join('');
+  const catChipRow = $('#cat-chips');
+  if(catChipRow) catChipRow.innerHTML = cats.map(c=>`<span class="chip">${c}<button type="button" data-cat="${c}" aria-label="Remove ${c}">×</button></span>`).join('');
+  const payChipRow = $('#pay-chips');
+  if(payChipRow) payChipRow.innerHTML = pays.map(p=>`<span class="chip">${p}<button type="button" data-pay="${p}" aria-label="Remove ${p}">×</button></span>`).join('');
+}
+
+function render(){
+  const list = $('#entry-list');
+  const empty = $('#empty-msg');
+  let exp=0, earn=0;
+  if(list){
+    list.innerHTML = entries.map(e=>{
+      if(e.type==='expense') exp+=e.amount; else earn+=e.amount;
+      return `<li class="item">
+        <div class="item-info">
+          <span class="item-cat">${e.category||''}</span>
+          <span class="item-meta">${e.date||''} ${e.time||''} · ${e.payment||''}${e.remark?' · '+e.remark:''}</span>
+        </div>
+        <span class="item-amt ${e.type==='expense'?'expense':''}">${fmt(e.amount)}</span>
+      </li>`;
+    }).join('');
+  }
+  if(empty) empty.hidden = entries.length>0;
+  const te = $('#tot-expense'); if(te) te.textContent = fmt(exp);
+  const tr = $('#tot-earning'); if(tr) tr.textContent = fmt(earn);
+  const tn = $('#tot-net'); if(tn){ tn.textContent = fmt(earn-exp); tn.style.color = earn-exp<0 ? '#e87351' : '#267254'; }
+}
+
+function switchMode(newMode){
+  save(STORAGE_KEYS[mode], entries);
+  save(STORAGE_KEYS.cats[mode], categories[mode]);
+  save(STORAGE_KEYS.pays[mode], payments[mode]);
+  mode = newMode;
+  entries = load(STORAGE_KEYS[mode], []);
+  categories[mode] = load(STORAGE_KEYS.cats[mode], DEFAULT_CATS[mode]);
+  payments[mode] = load(STORAGE_KEYS.pays[mode], DEFAULT_PAYS[mode]);
+  $$('.tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===mode));
+  renderCats();
+  render();
+}
+
+function addEntry(e){
+  e.preventDefault();
+  const amount = Number($('#amount').value);
+  const date = $('#date').value;
+  const category = $('#category').value;
+  const payment = $('#payment').value;
+  const remark = $('#remark').value.trim();
+  const time = nowTime(); // <-- REAL TIME HERE
+  if(!amount||!date||!category||!payment) return;
+  entries.push({id:uid(),type:mode,amount,date,time,category,payment,remark,created:Date.now()});
+  save(STORAGE_KEYS[mode], entries);
+  $('#entry-form').reset();
+  $('#date').value = today();
+  render();
+}
+
+function addCategory(){
+  const val = $('#new-category').value.trim();
+  if(!val) return;
+  const cats = categories[mode];
+  if(cats.some(c=>c.toLowerCase()===val.toLowerCase())){alert('Category already exists');return}
+  cats.push(val);
+  save(STORAGE_KEYS.cats[mode], cats);
+  $('#new-category').value = '';
+  renderCats();
+}
+
+function addPayment(){
+  const val = $('#new-payment').value.trim();
+  if(!val) return;
+  const pays = payments[mode];
+  if(pays.some(p=>p.toLowerCase()===val.toLowerCase())){alert('Payment method already exists');return}
+  pays.push(val);
+  save(STORAGE_KEYS.pays[mode], pays);
+  $('#new-payment').value = '';
+  renderCats();
+}
+
+function removeCategory(cat){
+  const cats = categories[mode];
+  if(cats.length<=1){alert('Need at least one category');return}
+  const idx = cats.indexOf(cat);
+  if(idx===-1) return;
+  cats.splice(idx,1);
+  save(STORAGE_KEYS.cats[mode], cats);
+  renderCats();
+}
+
+function removePayment(pay){
+  const pays = payments[mode];
+  if(pays.length<=1){alert('Need at least one payment method');return}
+  const idx = pays.indexOf(pay);
+  if(idx===-1) return;
+  pays.splice(idx,1);
+  save(STORAGE_KEYS.pays[mode], pays);
+  renderCats();
+}
+
+function buildCSV(entries, type){
+  const hdr = 'DATE,TIME,MONTH,CATEGORY,AMOUNT,PAYMENT METHOD,REMARK,Month-Year,TYPE';
+  const rows = entries.map(e=>{
+    const d = new Date(e.date+'T00:00:00');
+    const month = d.toLocaleString('en-US',{month:'long'});
+    const monthYear = month+' '+d.getFullYear();
+    const time = e.time || '12:00:00 PM'; // fallback for old entries
+    const esc = s => { if (!s) return ''; const str = String(s); if (/[",\r\n]/.test(str)) return '"' + str.replace(/"/g, '""') + '"'; return str; };
+    return [d.toLocaleDateString('en-US'),time,month,esc(e.category),e.amount,esc(e.payment),esc(e.remark),monthYear, type].join(',');
+  });
+  return [hdr,...rows].join('\r\n')+'\r\n';
+}
+
+function exportCSV(type){
+  const data = load(STORAGE_KEYS[type], []);
+  if(!data.length){alert('No '+type+' entries to export');return}
+  const csv = buildCSV(data, type);
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `kharcha-${type}-${today()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportAll(){
+  const expenseData = load(STORAGE_KEYS.expense, []);
+  const earningData = load(STORAGE_KEYS.earning, []);
+  if(!expenseData.length && !earningData.length){alert('No entries to export');return}
+  const hdr = 'DATE,TIME,MONTH,CATEGORY,AMOUNT,PAYMENT METHOD,REMARK,Month-Year,TYPE';
+  const rows = [];
+  expenseData.forEach(e=>{
+    const d = new Date(e.date+'T00:00:00');
+    const month = d.toLocaleString('en-US',{month:'long'});
+    const monthYear = month+' '+d.getFullYear();
+    const time = e.time || '12:00:00 PM';
+    const esc = s => { if (!s) return ''; const str = String(s); if (/[",\r\n]/.test(str)) return '"' + str.replace(/"/g, '""') + '"'; return str; };
+    rows.push([d.toLocaleDateString('en-US'),time,month,esc(e.category),e.amount,esc(e.payment),esc(e.remark),monthYear, 'expense'].join(','));
+  });
+  earningData.forEach(e=>{
+    const d = new Date(e.date+'T00:00:00');
+    const month = d.toLocaleString('en-US',{month:'long'});
+    const monthYear = month+' '+d.getFullYear();
+    const time = e.time || '12:00:00 PM';
+    const esc = s => { if (!s) return ''; const str = String(s); if (/[",\r\n]/.test(str)) return '"' + str.replace(/"/g, '""') + '"'; return str; };
+    rows.push([d.toLocaleDateString('en-US'),time,month,esc(e.category),e.amount,esc(e.payment),esc(e.remark),monthYear, 'earning'].join(','));
+  });
+  const csv = [hdr,...rows].join('\r\n')+'\r\n';
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `kharcha-all-${today()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function clearType(){
+  if(!entries.length){alert('Already empty');return}
+  if(confirm('Delete ALL '+mode+' entries from this phone? Cannot be undone.')){
+    entries = [];
+    save(STORAGE_KEYS[mode], entries);
+    render();
+  }
+}
+
+// Events
+$$('.tab').forEach(b=>b.onclick=()=>switchMode(b.dataset.tab));
+$('#entry-form').onsubmit = addEntry;
+$('#add-cat-btn').onclick = addCategory;
+$('#new-category').onkeydown = e=>{if(e.key==='Enter'){e.preventDefault();addCategory();}};
+$('#add-pay-btn').onclick = addPayment;
+$('#new-payment').onkeydown = e=>{if(e.key==='Enter'){e.preventDefault();addPayment();}};
+$('#cat-chips').onclick = e=>{const btn=e.target.closest('button');if(btn)removeCategory(btn.dataset.cat);};
+$('#pay-chips').onclick = e=>{const btn=e.target.closest('button');if(btn)removePayment(btn.dataset.pay);};
+$('#export-expense-btn').onclick = ()=>exportCSV('expense');
+$('#export-earning-btn').onclick = ()=>exportCSV('earning');
+$('#export-all-btn').onclick = exportAll;
+$('#clear-btn').onclick = clearType;
+
+// Init
+function init(){
+  initData();
+  $('#date').value = today();
+  renderCats();
+  render();
+}
+init();
+</script>
+</body>
+</html>
